@@ -26,7 +26,7 @@ export default defineConfig({
   },
   build: {
     outDir: 'build',
-    sourcemap: false, // Убираем sourcemap для продакшн
+    sourcemap: false,
     rollupOptions: {
       output: {
         manualChunks: {
@@ -38,7 +38,7 @@ export default defineConfig({
         }
       }
     },
-    chunkSizeWarningLimit: 1000 // Увеличиваем лимит до 1MB
+    chunkSizeWarningLimit: 1000
   },
   resolve: {
     alias: {

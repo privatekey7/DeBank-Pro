@@ -36,7 +36,7 @@ npm start
 
 ## <img src="https://cdn-icons-png.flaticon.com/128/16497/16497192.png" alt="StableFix Logo" width="30" height="30" style="vertical-align: baseline; margin-right: 4px;"> Системные требования
 
-- **[Node.js](https://nodejs.org/en/download)** версии 18 или выше
+- **[Node.js](https://nodejs.org/en/download)** версии 21 или выше
 - **npm** или **yarn**
 - Современный браузер (Chrome, Firefox, Safari, Edge)
 

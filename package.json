@@ -8,9 +8,9 @@
     "dev:backend": "cd backend && npm run dev",
     "dev:frontend": "cd frontend && npm run dev",
     "postinstall": "cd backend && npm install && cd ../frontend && npm install",
-    "build": "cd frontend && npm run build",
+    "build": "cd backend && npm run build && cd ../frontend && npm run build",
     "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\" \"npm run open-browser\"",
-    "open-browser": "powershell -Command \"Start-Sleep 3; Start-Process http://localhost:4001\"",
+    "open-browser": "powershell -Command \"Start-Sleep 5; Start-Process http://localhost:4001\"",
     "start:backend": "cd backend && npm start",
     "start:frontend": "cd frontend && npm run preview",
     "clean": "rimraf node_modules backend/node_modules frontend/node_modules",
@@ -32,6 +32,6 @@
     "vite": "^7.0.6"
   },
   "dependencies": {
-    "chalk": "^5.5.0"
+    "chalk": "^4.1.2"
   }
 }

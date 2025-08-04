@@ -1,4 +1,17 @@
-import chalk from 'chalk';
+// Простые ANSI коды для цветов
+const colors = {
+  reset: '\x1b[0m',
+  bright: '\x1b[1m',
+  dim: '\x1b[2m',
+  red: '\x1b[31m',
+  green: '\x1b[32m',
+  yellow: '\x1b[33m',
+  blue: '\x1b[34m',
+  magenta: '\x1b[35m',
+  cyan: '\x1b[36m',
+  white: '\x1b[37m',
+  gray: '\x1b[90m'
+};
 
 export class Logo {
   // Функция для подсчета видимой длины строки (без ANSI кодов и с учетом эмодзи)
@@ -25,25 +38,25 @@ export class Logo {
     console.clear(); // Очищаем экран
     
     const logo = `
-${chalk.cyan('╔══════════════════════════════════════════════════════════════════════════════╗')}
-${chalk.cyan('║')}                                                                              ${chalk.cyan('║')}
-${chalk.cyan('║')}             ${chalk.green.bold('██████╗ ███████╗██████╗  █████╗ ███╗   ██╗██╗  ██╗')}               ${chalk.cyan('║')}
-${chalk.cyan('║')}             ${chalk.green.bold('██╔══██╗██╔════╝██╔══██╗██╔══██╗████╗  ██║██║ ██╔╝')}               ${chalk.cyan('║')}
-${chalk.cyan('║')}             ${chalk.green.bold('██║  ██║█████╗  ██████╔╝███████║██╔██╗ ██║█████╔╝')}                ${chalk.cyan('║')}
-${chalk.cyan('║')}             ${chalk.green.bold('██║  ██║██╔══╝  ██╔══██╗██╔══██║██║╚██╗██║██╔═██╗')}                ${chalk.cyan('║')}
-${chalk.cyan('║')}             ${chalk.green.bold('██████╔╝███████╗██████╔╝██║  ██║██║ ╚████║██║  ██╗')}               ${chalk.cyan('║')}
-${chalk.cyan('║')}             ${chalk.green.bold('╚═════╝ ╚══════╝╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝')}               ${chalk.cyan('║')}
-${chalk.cyan('║')}                                                                              ${chalk.cyan('║')}
-${chalk.cyan('║')}                          ${chalk.blue.bold('██████╗ ██████╗   ██████╗')}                           ${chalk.cyan('║')}
-${chalk.cyan('║')}                          ${chalk.blue.bold('██╔══██╗██╔══██╗ ██╔═══██╗')}                          ${chalk.cyan('║')}
-${chalk.cyan('║')}                          ${chalk.blue.bold('██████╔╝██████╔╝ ██║   ██║')}                          ${chalk.cyan('║')}
-${chalk.cyan('║')}                          ${chalk.blue.bold('██╔═══╝ ██╔══██╗ ██║   ██║')}                          ${chalk.cyan('║')}
-${chalk.cyan('║')}                          ${chalk.blue.bold('██║     ██║  ║██╗ ██████╔╝')}                          ${chalk.cyan('║')}
-${chalk.cyan('║')}                          ${chalk.blue.bold('╚═╝     ╚═╝  ╚══╝')}  ╚════╝                           ${chalk.cyan('║')}
-${chalk.cyan('║')}                                                                              ${chalk.cyan('║')}
-${chalk.cyan('║')}                    ${chalk.gray('💎 Автор: ')}${chalk.blue('https://t.me/privatekey7')}${chalk.gray('💎')}                      ${chalk.cyan('║')}
-${chalk.cyan('║')}                                                                              ${chalk.cyan('║')}
-${chalk.cyan('╚══════════════════════════════════════════════════════════════════════════════╝')}
+${colors.cyan}╔══════════════════════════════════════════════════════════════════════════════╗${colors.reset}
+${colors.cyan}║${colors.reset}                                                                              ${colors.cyan}║${colors.reset}
+${colors.cyan}║${colors.reset}             ${colors.green}${colors.bright}██████╗ ███████╗██████╗  █████╗ ███╗   ██╗██╗  ██╗${colors.reset}               ${colors.cyan}║${colors.reset}
+${colors.cyan}║${colors.reset}             ${colors.green}${colors.bright}██╔══██╗██╔════╝██╔══██╗██╔══██╗████╗  ██║██║ ██╔╝${colors.reset}               ${colors.cyan}║${colors.reset}
+${colors.cyan}║${colors.reset}             ${colors.green}${colors.bright}██║  ██║█████╗  ██████╔╝███████║██╔██╗ ██║█████╔╝${colors.reset}                ${colors.cyan}║${colors.reset}
+${colors.cyan}║${colors.reset}             ${colors.green}${colors.bright}██║  ██║██╔══╝  ██╔══██╗██╔══██║██║╚██╗██║██╔═██╗${colors.reset}                ${colors.cyan}║${colors.reset}
+${colors.cyan}║${colors.reset}             ${colors.green}${colors.bright}██████╔╝███████╗██████╔╝██║  ██║██║ ╚████║██║  ██╗${colors.reset}               ${colors.cyan}║${colors.reset}
+${colors.cyan}║${colors.reset}             ${colors.green}${colors.bright}╚═════╝ ╚══════╝╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝${colors.reset}               ${colors.cyan}║${colors.reset}
+${colors.cyan}║${colors.reset}                                                                              ${colors.cyan}║${colors.reset}
+${colors.cyan}║${colors.reset}                          ${colors.blue}${colors.bright}██████╗ ██████╗   ██████╗${colors.reset}                           ${colors.cyan}║${colors.reset}
+${colors.cyan}║${colors.reset}                          ${colors.blue}${colors.bright}██╔══██╗██╔══██╗ ██╔═══██╗${colors.reset}                          ${colors.cyan}║${colors.reset}
+${colors.cyan}║${colors.reset}                          ${colors.blue}${colors.bright}██████╔╝██████╔╝ ██║   ██║${colors.reset}                          ${colors.cyan}║${colors.reset}
+${colors.cyan}║${colors.reset}                          ${colors.blue}${colors.bright}██╔═══╝ ██╔══██╗ ██║   ██║${colors.reset}                          ${colors.cyan}║${colors.reset}
+${colors.cyan}║${colors.reset}                          ${colors.blue}${colors.bright}██║     ██║  ║██╗ ██████╔╝${colors.reset}                          ${colors.cyan}║${colors.reset}
+${colors.cyan}║${colors.reset}                          ${colors.blue}${colors.bright}╚═╝     ╚═╝  ╚══╝${colors.reset}  ╚════╝                           ${colors.cyan}║${colors.reset}
+${colors.cyan}║${colors.reset}                                                                              ${colors.cyan}║${colors.reset}
+${colors.cyan}║${colors.reset}                    ${colors.gray}💎 Автор: ${colors.reset}${colors.blue}https://t.me/privatekey7${colors.reset}${colors.gray}💎${colors.reset}                      ${colors.cyan}║${colors.reset}
+${colors.cyan}║${colors.reset}                                                                              ${colors.cyan}║${colors.reset}
+${colors.cyan}╚══════════════════════════════════════════════════════════════════════════════╝${colors.reset}
 `;
 
     console.log(logo);
@@ -59,25 +72,25 @@ ${chalk.cyan('╚═════════════════════
   // Показываем статус запуска
   static showStartupStatus(port: number) {
     console.log('');
-    console.log(chalk.cyan('╔══════════════════════════════════════════════════════════════════════════════╗'));
-    console.log(chalk.cyan('║') + '                    ' + chalk.green.bold('✅ СЕРВЕР УСПЕШНО ЗАПУЩЕН ✅') + '                              ' + chalk.cyan('║'));
-    console.log(chalk.cyan('╠══════════════════════════════════════════════════════════════════════════════╣'));
-    console.log(chalk.cyan('║') + chalk.white(`  🌐 API доступен по адресу: http://localhost:${port}/api`) + '                        ' + chalk.cyan('║'));
-    console.log(chalk.cyan('║') + chalk.white(`  📱 Frontend доступен по адресу: http://localhost:4001`) + '                       ' + chalk.cyan('║'));
-    console.log(chalk.cyan('║') + chalk.white(`  📊 Статус сервера: http://localhost:4000/api/status`) + '                         ' + chalk.cyan('║'));
-    console.log(chalk.cyan('╚══════════════════════════════════════════════════════════════════════════════╝'));
+    console.log(`${colors.cyan}╔══════════════════════════════════════════════════════════════════════════════╗${colors.reset}`);
+    console.log(`${colors.cyan}║${colors.reset}                    ${colors.green}${colors.bright}✅ СЕРВЕР УСПЕШНО ЗАПУЩЕН ✅${colors.reset}                              ${colors.cyan}║${colors.reset}`);
+    console.log(`${colors.cyan}╠══════════════════════════════════════════════════════════════════════════════╣${colors.reset}`);
+    console.log(`${colors.cyan}║${colors.reset} ${colors.white} 🌐 API доступен по адресу: http://localhost:${port}/api${colors.reset}                        ${colors.cyan}║${colors.reset}`);
+    console.log(`${colors.cyan}║${colors.reset} ${colors.white} 📱 Frontend доступен по адресу: http://localhost:4001${colors.reset}                       ${colors.cyan}║${colors.reset}`);
+    console.log(`${colors.cyan}║${colors.reset} ${colors.white} 📊 Статус сервера: http://localhost:4000/api/status${colors.reset}                         ${colors.cyan}║${colors.reset}`);
+    console.log(`${colors.cyan}╚══════════════════════════════════════════════════════════════════════════════╝${colors.reset}`);
     console.log('');
   }
 
   // Показываем сообщение о начале обработки
   static showProcessingStart(walletCount: number) {
     console.log('');
-    console.log(chalk.cyan('╔══════════════════════════════════════════════════════════════════════════════╗'));
-    console.log(chalk.cyan('║') + '                  ' + chalk.yellow.bold('🔄 НАЧАЛО ОБРАБОТКИ КОШЕЛЬКОВ 🔄') + '                            ' + chalk.cyan('║'));
-    console.log(chalk.cyan('╠══════════════════════════════════════════════════════════════════════════════╣'));
-    console.log(chalk.cyan('║') + chalk.white(`  📋 Количество кошельков для обработки: ${walletCount}`) + '                                   ' + chalk.cyan('║'));
-    console.log(chalk.cyan('║') + chalk.white(`  ⏱️  Время начала: ${new Date().toLocaleString('ru-RU')}`) + '                                       ' + chalk.cyan('║'));
-    console.log(chalk.cyan('╚══════════════════════════════════════════════════════════════════════════════╝'));
+    console.log(`${colors.cyan}╔══════════════════════════════════════════════════════════════════════════════╗${colors.reset}`);
+    console.log(`${colors.cyan}║${colors.reset}                  ${colors.yellow}${colors.bright}🔄 НАЧАЛО ОБРАБОТКИ КОШЕЛЬКОВ 🔄${colors.reset}                            ${colors.cyan}║${colors.reset}`);
+    console.log(`${colors.cyan}╠══════════════════════════════════════════════════════════════════════════════╣${colors.reset}`);
+    console.log(`${colors.cyan}║${colors.reset} ${colors.white} 📋 Количество кошельков для обработки: ${walletCount}${colors.reset}                                   ${colors.cyan}║${colors.reset}`);
+    console.log(`${colors.cyan}║${colors.reset} ${colors.white} ⏱️  Время начала: ${new Date().toLocaleString('ru-RU')}${colors.reset}                                       ${colors.cyan}║${colors.reset}`);
+    console.log(`${colors.cyan}╚══════════════════════════════════════════════════════════════════════════════╝${colors.reset}`);
     console.log('');
   }
 } 
