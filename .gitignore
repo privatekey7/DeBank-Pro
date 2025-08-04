@@ -95,4 +95,13 @@ data/
 !tsconfig.json
 !tailwind.config.js
 !postcss.config.js
-!vite.config.ts 
+!vite.config.ts
+!frontend/package.json
+!frontend/package-lock.json
+!frontend/tsconfig.json
+!frontend/tailwind.config.js
+!frontend/postcss.config.js
+!frontend/vite.config.ts
+!backend/package.json
+!backend/package-lock.json
+!backend/tsconfig.json 
