@@ -27,6 +27,14 @@ app.use(express_1.default.json());
 const debankService = new debankService_1.DeBankService();
 const dataProcessor = new dataProcessor_1.DataProcessor();
 const logger = loggerService_1.LoggerService.getInstance();
+// Пути для файлов данных
+const DATA_DIR = path_1.default.join(__dirname, '../../data');
+const WALLETS_DATA_FILE = path_1.default.join(DATA_DIR, 'wallets_data.json');
+const PROCESSING_STATE_FILE = path_1.default.join(DATA_DIR, 'processing_state.json');
+// Создаем директорию для данных если её нет
+if (!fs_1.default.existsSync(DATA_DIR)) {
+    fs_1.default.mkdirSync(DATA_DIR, { recursive: true });
+}
 // Функция для загрузки кошельков из файла
 const loadWalletsFromFile = () => {
     try {
@@ -51,6 +59,69 @@ const loadWalletsFromFile = () => {
         return [];
     }
 };
+// Функция для сохранения данных кошельков в JSON файл
+const saveWalletsData = (walletsData) => {
+    try {
+        const dataToSave = {
+            timestamp: Date.now(),
+            totalWallets: walletsData.length,
+            wallets: walletsData
+        };
+        fs_1.default.writeFileSync(WALLETS_DATA_FILE, JSON.stringify(dataToSave, null, 2));
+        logger.info(`Данные ${walletsData.length} кошельков сохранены в файл`);
+    }
+    catch (error) {
+        logger.error('Ошибка при сохранении данных кошельков', error);
+    }
+};
+// Функция для загрузки данных кошельков из JSON файла
+const loadWalletsData = () => {
+    try {
+        if (!fs_1.default.existsSync(WALLETS_DATA_FILE)) {
+            logger.info('Файл с данными кошельков не найден, начинаем с пустого состояния');
+            return [];
+        }
+        const fileContent = fs_1.default.readFileSync(WALLETS_DATA_FILE, 'utf8');
+        const data = JSON.parse(fileContent);
+        logger.info(`Загружено ${data.wallets.length} кошельков из файла данных`);
+        return data.wallets || [];
+    }
+    catch (error) {
+        logger.error('Ошибка при загрузке данных кошельков', error);
+        return [];
+    }
+};
+// Функция для очистки старых данных при запуске
+const cleanupOldData = () => {
+    try {
+        // Удаляем старые файлы данных
+        if (fs_1.default.existsSync(WALLETS_DATA_FILE)) {
+            fs_1.default.unlinkSync(WALLETS_DATA_FILE);
+            logger.info('Старые данные кошельков удалены');
+        }
+        if (fs_1.default.existsSync(PROCESSING_STATE_FILE)) {
+            fs_1.default.unlinkSync(PROCESSING_STATE_FILE);
+            logger.info('Старое состояние обработки удалено');
+        }
+        logger.info('Очистка старых данных завершена');
+    }
+    catch (error) {
+        logger.error('Ошибка при очистке старых данных', error);
+    }
+};
+// Функция для сохранения состояния обработки
+const saveProcessingState = (state) => {
+    try {
+        const stateToSave = {
+            ...state,
+            timestamp: Date.now()
+        };
+        fs_1.default.writeFileSync(PROCESSING_STATE_FILE, JSON.stringify(stateToSave, null, 2));
+    }
+    catch (error) {
+        logger.error('Ошибка при сохранении состояния обработки', error);
+    }
+};
 // In-memory storage
 let walletsData = [];
 let isProcessing = false;
@@ -64,11 +135,31 @@ app.get('/api/status', (req, res) => {
     const cacheStats = debankService.getCacheStats();
     // Получаем общее количество кошельков из файла
     const totalWallets = loadWalletsFromFile().length;
+    // Проверяем наличие файлов данных
+    const hasDataFile = fs_1.default.existsSync(WALLETS_DATA_FILE);
+    const hasStateFile = fs_1.default.existsSync(PROCESSING_STATE_FILE);
+    // Получаем размер файла данных
+    let dataFileSize = 0;
+    if (hasDataFile) {
+        try {
+            const stats = fs_1.default.statSync(WALLETS_DATA_FILE);
+            dataFileSize = stats.size;
+        }
+        catch (error) {
+            logger.error('Ошибка при получении размера файла данных', error);
+        }
+    }
     res.json({
         status: 'running',
         walletsCount: totalWallets, // Используем общее количество из файла
+        processedWalletsCount: walletsData.length, // Количество обработанных кошельков в памяти
         isProcessing,
         processingProgress, // Добавляем прогресс обработки
+        dataFiles: {
+            hasDataFile,
+            hasStateFile,
+            dataFileSize: `${(dataFileSize / 1024 / 1024).toFixed(2)} MB`
+        },
         proxyStatus,
         proxyStats,
         loggerStats,
@@ -79,6 +170,10 @@ app.get('/api/status', (req, res) => {
 app.get('/api/wallets', (req, res) => {
     try {
         const { sortBy = 'totalValue', sortOrder = 'desc' } = req.query;
+        // Загружаем данные из файла если в памяти пусто
+        if (walletsData.length === 0) {
+            walletsData = loadWalletsData();
+        }
         let sortedWallets = dataProcessor.sortWallets(walletsData, sortBy, sortOrder);
         res.json({
             wallets: sortedWallets,
@@ -93,6 +188,10 @@ app.get('/api/wallets', (req, res) => {
 // Получить агрегированные данные
 app.get('/api/aggregated', (req, res) => {
     try {
+        // Загружаем данные из файла если в памяти пусто
+        if (walletsData.length === 0) {
+            walletsData = loadWalletsData();
+        }
         const aggregated = dataProcessor.aggregateWalletsData(walletsData);
         res.json(aggregated);
     }
@@ -104,6 +203,10 @@ app.get('/api/aggregated', (req, res) => {
 // Получить статистику
 app.get('/api/stats', (req, res) => {
     try {
+        // Загружаем данные из файла если в памяти пусто
+        if (walletsData.length === 0) {
+            walletsData = loadWalletsData();
+        }
         const stats = dataProcessor.getWalletStats(walletsData);
         res.json(stats);
     }
@@ -116,6 +219,10 @@ app.get('/api/stats', (req, res) => {
 app.post('/api/wallets/filter', (req, res) => {
     try {
         const filters = req.body;
+        // Загружаем данные из файла если в памяти пусто
+        if (walletsData.length === 0) {
+            walletsData = loadWalletsData();
+        }
         const filteredWallets = dataProcessor.filterWallets(walletsData, filters);
         res.json({
             wallets: filteredWallets,
@@ -130,6 +237,10 @@ app.post('/api/wallets/filter', (req, res) => {
 // Экспорт в CSV
 app.get('/api/export/csv', (req, res) => {
     try {
+        // Загружаем данные из файла если в памяти пусто
+        if (walletsData.length === 0) {
+            walletsData = loadWalletsData();
+        }
         const csvContent = dataProcessor.exportToCSV(walletsData);
         res.setHeader('Content-Type', 'text/csv');
         res.setHeader('Content-Disposition', 'attachment; filename=wallets_data.csv');
@@ -144,6 +255,11 @@ app.get('/api/export/csv', (req, res) => {
 app.delete('/api/wallets', (req, res) => {
     try {
         walletsData = [];
+        // Удаляем файл с данными
+        if (fs_1.default.existsSync(WALLETS_DATA_FILE)) {
+            fs_1.default.unlinkSync(WALLETS_DATA_FILE);
+            logger.info('Файл с данными кошельков удален');
+        }
         res.json({ message: 'Все данные очищены' });
     }
     catch (error) {
@@ -155,6 +271,10 @@ app.delete('/api/wallets', (req, res) => {
 app.get('/api/wallets/:address', (req, res) => {
     try {
         const { address } = req.params;
+        // Загружаем данные из файла если в памяти пусто
+        if (walletsData.length === 0) {
+            walletsData = loadWalletsData();
+        }
         const wallet = walletsData.find(w => w.address.toLowerCase() === address.toLowerCase());
         if (!wallet) {
             return res.status(404).json({ error: 'Кошелек не найден' });
@@ -228,6 +348,28 @@ app.delete('/api/cache', (req, res) => {
     }
     catch (error) {
         logger.error('Ошибка при очистке кэша', error);
+        res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+    }
+});
+// Очистить все данные и файлы
+app.delete('/api/data', (req, res) => {
+    try {
+        walletsData = [];
+        // Удаляем файлы данных
+        if (fs_1.default.existsSync(WALLETS_DATA_FILE)) {
+            fs_1.default.unlinkSync(WALLETS_DATA_FILE);
+            logger.info('Файл с данными кошельков удален');
+        }
+        if (fs_1.default.existsSync(PROCESSING_STATE_FILE)) {
+            fs_1.default.unlinkSync(PROCESSING_STATE_FILE);
+            logger.info('Файл состояния обработки удален');
+        }
+        // Очищаем кэш
+        debankService.clearCache();
+        res.json({ message: 'Все данные и файлы очищены' });
+    }
+    catch (error) {
+        logger.error('Ошибка при очистке данных', error);
         res.status(500).json({ error: 'Внутренняя ошибка сервера' });
     }
 });
@@ -382,13 +524,16 @@ const processWallets = async (addresses) => {
         }
         retryProgressBar.complete();
     }
-    // Обновляем данные
+    // Обновляем данные и сохраняем в файл
     walletsData = newWalletsData;
+    saveWalletsData(newWalletsData);
     isProcessing = false;
     processingProgress = null;
+    saveProcessingState({ isProcessing, progress: processingProgress });
     // Завершаем прогресс бар
     progressBar.complete();
-    logger.info(`Обработка завершена. Получено данных для ${newWalletsData.length}/${addresses.length} кошельков`);
+    const successRate = ((newWalletsData.length / addresses.length) * 100).toFixed(1);
+    logger.info(`Обработка завершена. Получено данных для ${newWalletsData.length}/${addresses.length} кошельков (${successRate}%)`);
     logger.debug('Данные кошельков после обновления', { walletsData });
 };
 // Запуск сервера
@@ -398,18 +543,29 @@ app.listen(PORT, async () => {
     logo_1.Logo.showStartupStatus(Number(PORT));
     logger.info(`Backend сервер запущен на порту ${PORT}`);
     logger.info(`API доступен по адресу: http://localhost:${PORT}/api`);
-    // Автоматически загружаем и обрабатываем кошельки при запуске
-    logger.info('Автоматическая загрузка кошельков из файла...');
-    const addresses = loadWalletsFromFile();
-    if (addresses.length > 0) {
-        logger.info(`Найдено ${addresses.length} кошельков в файле wallets.txt`);
-        logger.info('Начинаем автоматическую обработку...');
-        logo_1.Logo.showProcessingStart(addresses.length);
-        await processWallets(addresses);
-        logger.info('Автоматическая обработка завершена');
+    // Очищаем старые данные при запуске
+    logger.info('Очистка старых данных при запуске...');
+    cleanupOldData();
+    // Загружаем данные из файла если есть
+    logger.info('Загрузка данных кошельков из файла...');
+    walletsData = loadWalletsData();
+    if (walletsData.length > 0) {
+        logger.info(`Загружено ${walletsData.length} кошельков из файла данных`);
     }
     else {
-        logger.warn('Файл wallets.txt пуст или не содержит валидных адресов');
+        // Автоматически загружаем и обрабатываем кошельки при запуске если нет сохраненных данных
+        logger.info('Автоматическая загрузка кошельков из файла...');
+        const addresses = loadWalletsFromFile();
+        if (addresses.length > 0) {
+            logger.info(`Найдено ${addresses.length} кошельков в файле wallets.txt`);
+            logger.info('Начинаем автоматическую обработку...');
+            logo_1.Logo.showProcessingStart(addresses.length);
+            await processWallets(addresses);
+            logger.info('Автоматическая обработка завершена');
+        }
+        else {
+            logger.warn('Файл wallets.txt пуст или не содержит валидных адресов');
+        }
     }
 });
 exports.default = app;
