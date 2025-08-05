@@ -25,23 +25,32 @@ export const exportToExcel = async (data: any[], filename: string, sheetName: st
   window.URL.revokeObjectURL(url);
 };
 
-
-
-// Функция для экспорта токенов с подробной информацией
-export const exportTokensToExcel = (filteredTokens: any[], wallets: any[] = []) => {
+// Функция для экспорта токенов с подробной информацией и правильной фильтрацией
+export const exportTokensToExcel = (filteredTokens: any[], wallets: any[] = [], filters?: any) => {
   const exportData: any[] = [];
   
-  // Используем отфильтрованные токены вместо всех токенов из кошельков
-  filteredTokens.forEach(token => {
-    // Находим кошельки, которые содержат этот конкретный токен
-    const walletsWithToken = wallets.filter(wallet => 
-      wallet.tokens.some((t: any) => t.symbol === token.symbol && t.chain === token.chain)
-    );
-    
-    // Для каждого кошелька с этим токеном создаем отдельную строку
-    walletsWithToken.forEach(wallet => {
-      const walletToken = wallet.tokens.find((t: any) => t.symbol === token.symbol && t.chain === token.chain);
-              if (walletToken) {
+  // Проходим по всем кошелькам
+  wallets.forEach(wallet => {
+    wallet.tokens.forEach((walletToken: any) => {
+      // Проверяем, есть ли этот токен в отфильтрованных данных
+      const isTokenInFiltered = filteredTokens.some(filteredToken => 
+        filteredToken.symbol === walletToken.symbol && 
+        filteredToken.chain === walletToken.chain
+      );
+      
+      if (isTokenInFiltered) {
+        // Применяем фильтры по минимальной и максимальной сумме к конкретному токену
+        let shouldInclude = true;
+        
+        if (filters?.minValue !== undefined && walletToken.value < filters.minValue) {
+          shouldInclude = false;
+        }
+        
+        if (filters?.maxValue !== undefined && walletToken.value > filters.maxValue) {
+          shouldInclude = false;
+        }
+        
+        if (shouldInclude) {
           exportData.push({
             'Символ': walletToken.symbol,
             'Название': walletToken.name,
@@ -52,16 +61,15 @@ export const exportTokensToExcel = (filteredTokens: any[], wallets: any[] = []) 
             'Адрес кошелька': wallet.address
           });
         }
+      }
     });
   });
   
   exportToExcel(exportData, 'tokens_export', 'Токены');
 };
 
-
-
-// Функция для экспорта протоколов с подробной информацией
-export const exportProtocolsToExcel = (filteredProtocols: any[], wallets: any[] = []) => {
+// Функция для экспорта протоколов с подробной информацией и правильной фильтрацией
+export const exportProtocolsToExcel = (filteredProtocols: any[], wallets: any[] = [], filters?: any) => {
   const exportData: any[] = [];
   
   // Создаем уникальный список протоколов из отфильтрованных данных
@@ -78,17 +86,26 @@ export const exportProtocolsToExcel = (filteredProtocols: any[], wallets: any[] 
       
       // Проверяем, есть ли этот протокол в отфильтрованных данных
       if (uniqueProtocols.has(protocolKey)) {
-        // Собираем токены этого кошелька в той же цепочке
-        const tokensInChain = wallet.tokens.filter((token: any) => token.chain === walletProtocol.chain);
-        const totalTokensValue = tokensInChain.reduce((sum: number, token: any) => sum + token.value, 0);
+        // Применяем фильтры по минимальной и максимальной сумме к конкретному протоколу
+        let shouldInclude = true;
         
-        exportData.push({
-          'Название протокола': walletProtocol.name,
-          'Цепочка': walletProtocol.chain,
-          'Категория': walletProtocol.category || 'defi',
-          'Стоимость протокола в кошельке (USD)': walletProtocol.value, // Индивидуальная стоимость для этого кошелька
-          'Адрес кошелька': wallet.address
-        });
+        if (filters?.minValue !== undefined && walletProtocol.value < filters.minValue) {
+          shouldInclude = false;
+        }
+        
+        if (filters?.maxValue !== undefined && walletProtocol.value > filters.maxValue) {
+          shouldInclude = false;
+        }
+        
+        if (shouldInclude) {
+          exportData.push({
+            'Название протокола': walletProtocol.name,
+            'Цепочка': walletProtocol.chain,
+            'Категория': walletProtocol.category || 'defi',
+            'Стоимость протокола в кошельке (USD)': walletProtocol.value,
+            'Адрес кошелька': wallet.address
+          });
+        }
       }
     });
   });

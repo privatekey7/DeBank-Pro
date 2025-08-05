@@ -45,27 +45,10 @@ export const apiService = {
   },
 
   // Получить логи
-  getLogs: async (params?: { level?: string; limit?: string }): Promise<any> => {
-    const queryParams = new URLSearchParams();
-    if (params?.level) queryParams.append('level', params.level);
-    if (params?.limit) queryParams.append('limit', params.limit);
-    
-    const response = await api.get(`/logs?${queryParams}`);
-    return response.data;
-  },
-
-  // Переключить режим отладки
-  toggleDebugMode: async (enabled: boolean): Promise<any> => {
-    const response = await api.post('/debug/mode', { enabled });
-    return response.data;
-  },
-
-  // Очистить логи
-  clearLogs: async (walletAddress?: string): Promise<any> => {
-    const params = new URLSearchParams();
-    if (walletAddress) params.append('walletAddress', walletAddress);
-    
-    const response = await api.delete(`/logs?${params}`);
+  getLogs: async (level?: string, limit?: number): Promise<any> => {
+    const response = await api.get('/logs', {
+      params: { level, limit }
+    });
     return response.data;
   },
 
@@ -75,31 +58,51 @@ export const apiService = {
     return response.data;
   },
 
-  // Экспорт в CSV
+  // Фильтровать токены по стоимости
+  filterTokens: async (filters: FilterOptions): Promise<{ tokens: any[]; total: number }> => {
+    const response = await api.post('/tokens/filter', filters);
+    return response.data;
+  },
+
+  // Фильтровать протоколы по стоимости
+  filterProtocols: async (filters: FilterOptions): Promise<{ protocols: any[]; total: number }> => {
+    const response = await api.post('/protocols/filter', filters);
+    return response.data;
+  },
+
+  // Добавить кошельки
+  addWallets: async (addresses: string[]): Promise<any> => {
+    const response = await api.post('/wallets/add', { addresses });
+    return response.data;
+  },
+
+  // Очистить данные
+  clearData: async (): Promise<any> => {
+    const response = await api.delete('/wallets');
+    return response.data;
+  },
+
+  // Очистить логи
+  clearLogs: async (walletAddress?: string): Promise<any> => {
+    const response = await api.delete('/logs', {
+      params: { walletAddress }
+    });
+    return response.data;
+  },
+
+  // Очистить кэш
+  clearCache: async (): Promise<any> => {
+    const response = await api.delete('/cache');
+    return response.data;
+  },
+
+  // Экспорт CSV
   exportCSV: async (): Promise<Blob> => {
     const response = await api.get('/export/csv', {
       responseType: 'blob'
     });
     return response.data;
-  },
-
-  // Очистить данные
-  clearData: async (): Promise<{ message: string }> => {
-    const response = await api.delete('/wallets');
-    return response.data;
-  },
-
-  // Перезапустить обработку кошельков
-  processWallets: async (): Promise<{ message: string; walletsCount: number }> => {
-    const response = await api.post('/wallets/process');
-    return response.data;
-  },
-
-  // Получить данные конкретного кошелька
-  getWallet: async (address: string): Promise<WalletData> => {
-    const response = await api.get(`/wallets/${address}`);
-    return response.data;
-  },
+  }
 };
 
 export default apiService; 

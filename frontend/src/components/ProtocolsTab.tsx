@@ -129,7 +129,7 @@ const ProtocolsTab: React.FC = () => {
   };
 
   const handleExport = () => {
-    exportProtocolsToExcel(filteredProtocols, wallets);
+    exportProtocolsToExcel(filteredProtocols, wallets, filters);
   };
 
   const totalValue = protocols.reduce((sum, protocol) => sum + protocol.value, 0);

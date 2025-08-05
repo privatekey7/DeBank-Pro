@@ -127,8 +127,6 @@ export class DataProcessor {
       });
     });
 
-
-
     return stats;
   };
 
@@ -150,8 +148,6 @@ export class DataProcessor {
         if (!hasMatchingChain) return false;
       }
 
-
-
       // Фильтр по токенам
       if (filters.tokens && filters.tokens.length > 0) {
         const walletTokens = wallet.tokens.map(token => token.symbol);
@@ -161,6 +157,98 @@ export class DataProcessor {
 
       return true;
     });
+  };
+
+  // Новый метод для фильтрации токенов по минимальной и максимальной сумме
+  public filterTokensByValue = (wallets: WalletData[], filters: {
+    minValue?: number;
+    maxValue?: number;
+    chains?: string[];
+    tokens?: string[];
+  }): TokenData[] => {
+    const allTokens: TokenData[] = [];
+    
+    wallets.forEach(wallet => {
+      wallet.tokens.forEach(token => {
+        let shouldInclude = true;
+        
+        // Фильтр по минимальной сумме
+        if (filters.minValue !== undefined && token.value < filters.minValue) {
+          shouldInclude = false;
+        }
+        
+        // Фильтр по максимальной сумме
+        if (filters.maxValue !== undefined && token.value > filters.maxValue) {
+          shouldInclude = false;
+        }
+        
+        // Фильтр по цепочкам
+        if (filters.chains && filters.chains.length > 0) {
+          if (!filters.chains.includes(token.chain)) {
+            shouldInclude = false;
+          }
+        }
+        
+        // Фильтр по токенам
+        if (filters.tokens && filters.tokens.length > 0) {
+          if (!filters.tokens.includes(token.symbol)) {
+            shouldInclude = false;
+          }
+        }
+        
+        if (shouldInclude) {
+          allTokens.push(token);
+        }
+      });
+    });
+    
+    return allTokens;
+  };
+
+  // Новый метод для фильтрации протоколов по минимальной и максимальной сумме
+  public filterProtocolsByValue = (wallets: WalletData[], filters: {
+    minValue?: number;
+    maxValue?: number;
+    chains?: string[];
+    protocols?: string[];
+  }): ProtocolData[] => {
+    const allProtocols: ProtocolData[] = [];
+    
+    wallets.forEach(wallet => {
+      wallet.protocols.forEach(protocol => {
+        let shouldInclude = true;
+        
+        // Фильтр по минимальной сумме
+        if (filters.minValue !== undefined && protocol.value < filters.minValue) {
+          shouldInclude = false;
+        }
+        
+        // Фильтр по максимальной сумме
+        if (filters.maxValue !== undefined && protocol.value > filters.maxValue) {
+          shouldInclude = false;
+        }
+        
+        // Фильтр по цепочкам
+        if (filters.chains && filters.chains.length > 0) {
+          if (!filters.chains.includes(protocol.chain)) {
+            shouldInclude = false;
+          }
+        }
+        
+        // Фильтр по протоколам
+        if (filters.protocols && filters.protocols.length > 0) {
+          if (!filters.protocols.includes(protocol.name)) {
+            shouldInclude = false;
+          }
+        }
+        
+        if (shouldInclude) {
+          allProtocols.push(protocol);
+        }
+      });
+    });
+    
+    return allProtocols;
   };
 
   public sortWallets = (wallets: WalletData[], sortBy: string, sortOrder: 'asc' | 'desc' = 'desc'): WalletData[] => {

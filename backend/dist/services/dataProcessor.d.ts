@@ -1,4 +1,4 @@
-import { WalletData, AggregatedData } from '../types';
+import { WalletData, AggregatedData, TokenData, ProtocolData } from '../types';
 export declare class DataProcessor {
     aggregateWalletsData: (wallets: WalletData[]) => AggregatedData;
     getWalletStats: (wallets: WalletData[]) => {
@@ -23,6 +23,18 @@ export declare class DataProcessor {
         chains?: string[];
         tokens?: string[];
     }) => WalletData[];
+    filterTokensByValue: (wallets: WalletData[], filters: {
+        minValue?: number;
+        maxValue?: number;
+        chains?: string[];
+        tokens?: string[];
+    }) => TokenData[];
+    filterProtocolsByValue: (wallets: WalletData[], filters: {
+        minValue?: number;
+        maxValue?: number;
+        chains?: string[];
+        protocols?: string[];
+    }) => ProtocolData[];
     sortWallets: (wallets: WalletData[], sortBy: string, sortOrder?: "asc" | "desc") => WalletData[];
     exportToCSV: (wallets: WalletData[]) => string;
 }

@@ -139,7 +139,7 @@ const TokensTab: React.FC = () => {
   };
 
   const handleExport = () => {
-    exportTokensToExcel(filteredTokens, wallets);
+    exportTokensToExcel(filteredTokens, wallets, filters);
   };
 
   const chartData = getChainStats().map((chain, index) => ({

@@ -264,6 +264,50 @@ app.post('/api/wallets/filter', (req, res) => {
   }
 });
 
+// Фильтровать токены по стоимости
+app.post('/api/tokens/filter', (req, res) => {
+  try {
+    const filters = req.body;
+    
+    // Загружаем данные из файла если в памяти пусто
+    if (walletsData.length === 0) {
+      walletsData = loadWalletsData();
+    }
+    
+    const filteredTokens = dataProcessor.filterTokensByValue(walletsData, filters);
+    
+    res.json({
+      tokens: filteredTokens,
+      total: filteredTokens.length
+    });
+  } catch (error) {
+    logger.error('Ошибка при фильтрации токенов', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+  }
+});
+
+// Фильтровать протоколы по стоимости
+app.post('/api/protocols/filter', (req, res) => {
+  try {
+    const filters = req.body;
+    
+    // Загружаем данные из файла если в памяти пусто
+    if (walletsData.length === 0) {
+      walletsData = loadWalletsData();
+    }
+    
+    const filteredProtocols = dataProcessor.filterProtocolsByValue(walletsData, filters);
+    
+    res.json({
+      protocols: filteredProtocols,
+      total: filteredProtocols.length
+    });
+  } catch (error) {
+    logger.error('Ошибка при фильтрации протоколов', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+  }
+});
+
 // Экспорт в CSV
 app.get('/api/export/csv', (req, res) => {
   try {
