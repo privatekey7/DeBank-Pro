@@ -6,10 +6,12 @@ import { LoggerService } from './loggerService';
 export class DeBankService {
   private proxyService: ProxyService;
   private logger: LoggerService;
-  private maxRetries = 4; // Увеличиваем количество попыток
-  private requestTimeout = 20000; // Увеличиваем таймаут запроса
+  private maxRetries = 6; // Увеличиваем количество попыток
+  private requestTimeout = 45000; // Увеличиваем таймаут запроса до 45 секунд
   private cache = new Map<string, { data: WalletData; timestamp: number }>();
   private cacheTimeout = 5 * 60 * 1000; // 5 минут кэш
+  private dataCollectionTimeout = 15000; // Увеличиваем время сбора данных до 15 секунд
+  private networkWaitTimeout = 40000; // Увеличиваем время ожидания сетевых запросов до 40 секунд
 
   constructor() {
     this.proxyService = new ProxyService();
@@ -90,7 +92,11 @@ export class DeBankService {
         
         // Ждем перед следующей попыткой только для других ошибок
         if (retries < this.maxRetries - 1) {
-          const delay = 2000 * retries; // Увеличиваем задержку: 0, 2, 4, 6 секунд
+          // Экспоненциальный backoff с джиттером: 1, 2, 4, 8, 16 секунд
+          const baseDelay = Math.min(1000 * Math.pow(2, retries), 16000);
+          const jitter = Math.random() * 1000; // Добавляем случайность до 1 секунды
+          const delay = Math.floor(baseDelay + jitter);
+          
           this.logger.addProcessingStep(walletAddress, `Ожидание ${delay}мс перед следующей попыткой...`);
           await this.delay(delay);
         }
@@ -210,18 +216,18 @@ export class DeBankService {
       try {
         await page.waitForFunction(
           'document.body.innerText.includes("Data updated")',
-          { timeout: 30000 } // Увеличиваем таймаут с 15 до 30 секунд
+          { timeout: 60000 } // Увеличиваем таймаут до 60 секунд
         );
         this.logger.addProcessingStep(walletAddress, '"Data updated" обнаружен, начинаем сбор данных...');
       } catch (error) {
-        this.logger.addProcessingStep(walletAddress, '"Data updated" не найден в течение 30 секунд, продолжаем сбор данных...');
+        this.logger.addProcessingStep(walletAddress, '"Data updated" не найден в течение 60 секунд, продолжаем сбор данных...');
       }
       
       // Ждем завершения всех сетевых запросов
       this.logger.addProcessingStep(walletAddress, 'Ждем завершения всех сетевых запросов...');
       await page.waitForFunction(
         'window.performance.getEntriesByType("resource").filter(r => r.name.includes("api.debank.com")).every(r => r.responseEnd > 0)',
-        { timeout: 20000 } // Увеличиваем таймаут с 10 до 20 секунд
+        { timeout: this.networkWaitTimeout } // Используем новый увеличенный таймаут
       ).catch(() => {
         this.logger.addProcessingStep(walletAddress, 'Не удалось дождаться завершения всех запросов, продолжаем...');
       });
@@ -238,8 +244,8 @@ export class DeBankService {
       }
       
       // Ждем дополнительное время для сбора всех данных
-      this.logger.addProcessingStep(walletAddress, 'Ждем 8 секунд для завершения сбора данных...');
-      await this.delay(8000); // Увеличиваем с 3 до 8 секунд
+      this.logger.addProcessingStep(walletAddress, `Ждем ${this.dataCollectionTimeout/1000} секунд для завершения сбора данных...`);
+      await this.delay(this.dataCollectionTimeout); // Используем новый увеличенный таймаут
       
       // Дополнительная проверка - ждем появления данных протоколов в DOM
       try {
@@ -335,8 +341,8 @@ export class DeBankService {
       
       // Дополнительная проверка - ждем еще немного для завершения всех запросов
       if (portfolioList.length === 0) {
-        this.logger.addProcessingStep(walletAddress, 'Данные протоколов все еще не найдены, ждем еще 5 секунд...');
-        await this.delay(5000);
+        this.logger.addProcessingStep(walletAddress, 'Данные протоколов все еще не найдены, ждем еще 10 секунд...');
+        await this.delay(10000); // Увеличиваем время ожидания до 10 секунд
         
         // Проверяем еще раз
         const finalProtocolRequests = await page.evaluate(() => {
@@ -348,6 +354,38 @@ export class DeBankService {
         });
         
         this.logger.addProcessingStep(walletAddress, `После дополнительного ожидания найдено ${finalProtocolRequests} запросов к API протоколов`);
+        
+        // Если все еще нет данных, пробуем альтернативные методы
+        if (portfolioList.length === 0) {
+          this.logger.addProcessingStep(walletAddress, 'Пробуем альтернативные методы получения данных протоколов...');
+          
+          try {
+            // Пробуем получить данные через различные эндпоинты
+            const alternativeData = await page.evaluate((address) => {
+              const endpoints = [
+                `https://api.debank.com/portfolio/project_list?user_addr=${address}`,
+                `https://api.debank.com/portfolio?user_addr=${address}`,
+                `https://api.debank.com/protocol?user_addr=${address}`,
+                `https://api.debank.com/user/protocol?user_addr=${address}`,
+                `https://api.debank.com/user/portfolio?user_addr=${address}`
+              ];
+              
+              return Promise.all(endpoints.map(endpoint => 
+                fetch(endpoint).then(response => 
+                  response.ok ? response.json() : null
+                ).catch(() => null)
+              ));
+            }, walletAddress);
+            
+            const validData = alternativeData.filter(data => data !== null);
+            if (validData.length > 0) {
+              this.logger.addProcessingStep(walletAddress, `Получены данные протоколов через альтернативные методы: ${validData.length} записей`);
+              portfolioList.push(...validData);
+            }
+          } catch (error) {
+            this.logger.addProcessingStep(walletAddress, `Ошибка при альтернативном получении данных: ${error}`);
+          }
+        }
       }
        
       // Добавляем собранные данные в networkData

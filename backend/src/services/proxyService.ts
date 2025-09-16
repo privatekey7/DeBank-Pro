@@ -8,8 +8,9 @@ export class ProxyService {
   private currentIndex = 0;
   private failedProxies = new Set<string>();
   private workingProxies = new Set<string>();
-  private proxyStats = new Map<string, { success: number; fails: number; lastUsed: number }>();
+  private proxyStats = new Map<string, { success: number; fails: number; lastUsed: number; lastFailure: number }>();
   private logger: LoggerService;
+  private lastResetTime = Date.now();
 
   constructor() {
     this.logger = LoggerService.getInstance();
@@ -118,6 +119,14 @@ export class ProxyService {
       return null;
     }
 
+    // Если все прокси неработающие, сбрасываем список неудачных каждые 10 минут
+    const now = Date.now();
+    if (this.failedProxies.size === authProxies.length && now - this.lastResetTime > 600000) {
+      this.logger.debug('Все прокси неработающие, сбрасываем список неудачных (10 минут прошло)');
+      this.failedProxies.clear();
+      this.lastResetTime = now;
+    }
+
     // Сортируем прокси по надежности (работающие прокси в приоритете)
     const sortedProxies = authProxies.sort((a, b) => {
       const aKey = `${a.protocol}://${a.host}:${a.port}`;
@@ -155,7 +164,7 @@ export class ProxyService {
       const proxyKey = `${proxy.protocol}://${proxy.host}:${proxy.port}`;
       
       // Обновляем статистику использования
-      const stats = this.proxyStats.get(proxyKey) || { success: 0, fails: 0, lastUsed: 0 };
+      const stats = this.proxyStats.get(proxyKey) || { success: 0, fails: 0, lastUsed: 0, lastFailure: 0 };
       stats.lastUsed = Date.now();
       this.proxyStats.set(proxyKey, stats);
       
@@ -175,8 +184,9 @@ export class ProxyService {
     this.workingProxies.delete(proxyKey);
     
     // Обновляем статистику
-    const stats = this.proxyStats.get(proxyKey) || { success: 0, fails: 0, lastUsed: 0 };
+    const stats = this.proxyStats.get(proxyKey) || { success: 0, fails: 0, lastUsed: 0, lastFailure: 0 };
     stats.fails++;
+    stats.lastFailure = Date.now();
     this.proxyStats.set(proxyKey, stats);
     
     this.logger.debug(`Прокси ${proxyKey} помечен как неработающий (успехов: ${stats.success}, неудач: ${stats.fails})`);
@@ -188,7 +198,7 @@ export class ProxyService {
     this.workingProxies.add(proxyKey);
     
     // Обновляем статистику
-    const stats = this.proxyStats.get(proxyKey) || { success: 0, fails: 0, lastUsed: 0 };
+    const stats = this.proxyStats.get(proxyKey) || { success: 0, fails: 0, lastUsed: 0, lastFailure: 0 };
     stats.success++;
     this.proxyStats.set(proxyKey, stats);
     
@@ -221,10 +231,14 @@ export class ProxyService {
     const authProxies = this.proxies.filter(proxy => proxy.username && proxy.password);
     const stats = authProxies.map(proxy => {
       const proxyKey = `${proxy.protocol}://${proxy.host}:${proxy.port}`;
-      const proxyStats = this.proxyStats.get(proxyKey) || { success: 0, fails: 0, lastUsed: 0 };
+      const proxyStats = this.proxyStats.get(proxyKey) || { success: 0, fails: 0, lastUsed: 0, lastFailure: 0 };
       const successRate = proxyStats.success + proxyStats.fails > 0 
         ? (proxyStats.success / (proxyStats.success + proxyStats.fails) * 100).toFixed(1)
         : '0.0';
+      
+      // Определяем статус прокси на основе времени последней неудачи
+      const timeSinceLastFailure = proxyStats.lastFailure > 0 ? Date.now() - proxyStats.lastFailure : Infinity;
+      const isRecentlyFailed = timeSinceLastFailure < 300000; // 5 минут
       
       return {
         host: proxy.host,
@@ -232,10 +246,13 @@ export class ProxyService {
         protocol: proxy.protocol,
         isWorking: this.workingProxies.has(proxyKey),
         isFailed: this.failedProxies.has(proxyKey),
+        isRecentlyFailed,
         success: proxyStats.success,
         fails: proxyStats.fails,
         successRate: `${successRate}%`,
-        lastUsed: proxyStats.lastUsed > 0 ? new Date(proxyStats.lastUsed).toISOString() : 'never'
+        lastUsed: proxyStats.lastUsed > 0 ? new Date(proxyStats.lastUsed).toISOString() : 'never',
+        lastFailure: proxyStats.lastFailure > 0 ? new Date(proxyStats.lastFailure).toISOString() : 'never',
+        timeSinceLastFailure: timeSinceLastFailure !== Infinity ? `${Math.floor(timeSinceLastFailure / 1000)}s ago` : 'never'
       };
     });
 
@@ -243,7 +260,37 @@ export class ProxyService {
       total: authProxies.length,
       working: this.getWorkingProxyCount(),
       failed: authProxies.length - this.getWorkingProxyCount(),
+      recentlyFailed: stats.filter(s => s.isRecentlyFailed).length,
       details: stats
     };
+  };
+
+  // Метод для проверки здоровья прокси
+  public async checkProxyHealth(proxy: ProxyConfig): Promise<boolean> {
+    try {
+      const proxyKey = `${proxy.protocol}://${proxy.host}:${proxy.port}`;
+      
+      // Простая проверка доступности прокси через Puppeteer
+      const puppeteer = require('puppeteer');
+      const browser = await puppeteer.launch({
+        headless: true,
+        args: [`--proxy-server=${proxy.protocol}://${proxy.host}:${proxy.port}`]
+      });
+      
+      const page = await browser.newPage();
+      await page.authenticate({
+        username: proxy.username!,
+        password: proxy.password!
+      });
+      
+      // Пробуем загрузить простую страницу
+      await page.goto('https://httpbin.org/ip', { timeout: 10000 });
+      await browser.close();
+      
+      return true;
+    } catch (error) {
+      this.logger.debug(`Проверка здоровья прокси ${proxy.host}:${proxy.port} не удалась: ${error}`);
+      return false;
+    }
   };
 } 

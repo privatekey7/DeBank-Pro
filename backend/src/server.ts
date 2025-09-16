@@ -527,8 +527,8 @@ const processWallets = async (addresses: string[]) => {
   const progressBar = new ProgressBar(addresses.length);
   
   // Максимальное количество одновременных запросов
-  const maxConcurrent = 5;
-  const batchSize = addresses.length > 50 ? 20 : addresses.length > 20 ? 15 : 10; // Адаптивный размер батча
+  const maxConcurrent = 3; // Уменьшаем для более стабильной работы
+  const batchSize = addresses.length > 50 ? 15 : addresses.length > 20 ? 10 : 5; // Уменьшаем размер батча для лучшей стабильности
   
   // Функция для обработки одного кошелька с повторными попытками
   const processWalletWithRetry = async (address: string, retryCount = 0): Promise<WalletData | null> => {
@@ -593,10 +593,10 @@ const processWallets = async (addresses: string[]) => {
     
     logger.info(`Батч ${Math.floor(i / batchSize) + 1} завершен: ${successCount}/${batch.length} успешно`);
     
-    // Небольшая пауза между батчами для снижения нагрузки
+    // Увеличиваем паузу между батчами для снижения нагрузки
     if (i + batchSize < addresses.length) {
       logger.info(`Пауза между батчами...`);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 3000)); // Увеличиваем с 1 до 3 секунд
     }
   }
   
@@ -613,7 +613,7 @@ const processWallets = async (addresses: string[]) => {
       
       try {
         // Увеличиваем задержку перед финальной попыткой
-        await new Promise(resolve => setTimeout(resolve, 5000));
+        await new Promise(resolve => setTimeout(resolve, 10000)); // Увеличиваем с 5 до 10 секунд
         
         const walletData = await debankService.getWalletData(address);
         if (walletData) {
