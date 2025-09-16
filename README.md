@@ -44,3 +44,5 @@ npm start
 Если у вас есть вопросы или предложения, свяжитесь со мной через:
 
 Telegram: [@PrivateKey](https://t.me/Andrey_PrivateKey)
+
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/privatekey7/DeBank-Pro)
