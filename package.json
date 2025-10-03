@@ -26,12 +26,10 @@
   "author": "DeBank Pro Team",
   "license": "MIT",
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.7.0",
-    "concurrently": "^8.2.2",
-    "rimraf": "^5.0.5",
-    "vite": "^7.0.6"
+    "concurrently": "^9.2.1",
+    "rimraf": "^6.0.1"
   },
   "dependencies": {
-    "chalk": "^4.1.2"
+    "chalk": "^5.6.2"
   }
 }
