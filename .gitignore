@@ -104,7 +104,4 @@ data/
 !frontend/vite.config.ts
 !backend/package.json
 !backend/package-lock.json
-!backend/tsconfig.json 
-# Приватные данные пользователя (прокси и адреса кошельков)
-proxy.txt
-wallets.txt
+!backend/tsconfig.json
