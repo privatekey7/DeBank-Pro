@@ -1,4 +1,4 @@
-# DeBank Pro <img src="https://github.com/privatekey7/test/blob/main/favicon.svg" alt="StableFix Logo" width="30" height="30" style="vertical-align: baseline; margin-right: 4px;">
+# DeBank Pro 
 
 <img width="1250" height="914" alt="image" src="https://github.com/user-attachments/assets/815db07d-a4bc-414c-a869-9fdc728db0ce" />
 
