@@ -54,7 +54,7 @@ ${colors.cyan}║${colors.reset}                          ${colors.blue}${colors
 ${colors.cyan}║${colors.reset}                          ${colors.blue}${colors.bright}██║     ██║  ║██╗ ██████╔╝${colors.reset}                          ${colors.cyan}║${colors.reset}
 ${colors.cyan}║${colors.reset}                          ${colors.blue}${colors.bright}╚═╝     ╚═╝  ╚══╝${colors.reset}  ╚════╝                           ${colors.cyan}║${colors.reset}
 ${colors.cyan}║${colors.reset}                                                                              ${colors.cyan}║${colors.reset}
-${colors.cyan}║${colors.reset}                    ${colors.gray}💎 Автор: ${colors.reset}${colors.blue}https://t.me/privatekey7${colors.reset}${colors.gray}💎${colors.reset}                      ${colors.cyan}║${colors.reset}
+${colors.cyan}║${colors.reset}                    ${colors.gray}💎 Автор: ${colors.reset}${colors.blue}https://t.me/privatekey_ai${colors.reset}${colors.gray}💎${colors.reset}                      ${colors.cyan}║${colors.reset}
 ${colors.cyan}║${colors.reset}                                                                              ${colors.cyan}║${colors.reset}
 ${colors.cyan}╚══════════════════════════════════════════════════════════════════════════════╝${colors.reset}
 `;

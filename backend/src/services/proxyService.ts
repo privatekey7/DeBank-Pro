@@ -127,55 +127,30 @@ export class ProxyService {
       this.lastResetTime = now;
     }
 
-    // Сортируем прокси по надежности (работающие прокси в приоритете)
-    const sortedProxies = authProxies.sort((a, b) => {
-      const aKey = `${a.protocol}://${a.host}:${a.port}`;
-      const bKey = `${b.protocol}://${b.host}:${b.port}`;
-      
-      const aWorking = this.workingProxies.has(aKey);
-      const bWorking = this.workingProxies.has(bKey);
-      
-      const aFailed = this.failedProxies.has(aKey);
-      const bFailed = this.failedProxies.has(bKey);
-      
-      // Работающие прокси в приоритете
-      if (aWorking && !bWorking) return -1;
-      if (!aWorking && bWorking) return 1;
-      
-      // Неудачные прокси в конце
-      if (aFailed && !bFailed) return 1;
-      if (!aFailed && bFailed) return -1;
-      
-      // По статистике успешности
-      const aStats = this.proxyStats.get(aKey) || { success: 0, fails: 0, lastUsed: 0 };
-      const bStats = this.proxyStats.get(bKey) || { success: 0, fails: 0, lastUsed: 0 };
-      
-      const aRatio = aStats.success / (aStats.success + aStats.fails) || 0;
-      const bRatio = bStats.success / (bStats.success + bStats.fails) || 0;
-      
-      if (aRatio !== bRatio) return bRatio - aRatio;
-      
-      // По времени последнего использования (менее используемые в приоритете)
-      return aStats.lastUsed - bStats.lastUsed;
-    });
+    // Round-robin: равномерно распределяем нагрузку между прокси,
+    // пропуская помеченные как неработающие
+    for (let i = 0; i < authProxies.length; i++) {
+      const proxy = authProxies[this.currentIndex % authProxies.length];
+      this.currentIndex++;
 
-    // Берем первый доступный прокси
-    for (const proxy of sortedProxies) {
       const proxyKey = `${proxy.protocol}://${proxy.host}:${proxy.port}`;
-      
-      // Обновляем статистику использования
+      if (this.failedProxies.has(proxyKey)) {
+        continue;
+      }
+
       const stats = this.proxyStats.get(proxyKey) || { success: 0, fails: 0, lastUsed: 0, lastFailure: 0 };
       stats.lastUsed = Date.now();
       this.proxyStats.set(proxyKey, stats);
-      
-      this.logger.debug(`Выбран прокси: ${proxy.host}:${proxy.port} (работающий: ${this.workingProxies.has(proxyKey)}, неудачный: ${this.failedProxies.has(proxyKey)})`);
+
       return proxy;
     }
 
-    // Если все прокси неработающие, сбрасываем список и пробуем снова
+    // Все прокси неработающие — сбрасываем список и выдаём следующий по кругу
     this.failedProxies.clear();
     this.logger.debug('Все прокси неработающие, сбрасываем список неудачных');
-    return sortedProxies[0] || null;
+    const proxy = authProxies[this.currentIndex % authProxies.length];
+    this.currentIndex++;
+    return proxy || null;
   };
 
   public markProxyAsFailed = (proxy: ProxyConfig): void => {
@@ -268,25 +243,24 @@ export class ProxyService {
   // Метод для проверки здоровья прокси
   public async checkProxyHealth(proxy: ProxyConfig): Promise<boolean> {
     try {
-      const proxyKey = `${proxy.protocol}://${proxy.host}:${proxy.port}`;
-      
-      // Простая проверка доступности прокси через Puppeteer
-      const puppeteer = require('puppeteer');
-      const browser = await puppeteer.launch({
-        headless: true,
-        args: [`--proxy-server=${proxy.protocol}://${proxy.host}:${proxy.port}`]
+      const axios = require('axios');
+      const { HttpsProxyAgent } = require('https-proxy-agent');
+      const { SocksProxyAgent } = require('socks-proxy-agent');
+
+      const auth = proxy.username && proxy.password
+        ? `${encodeURIComponent(proxy.username)}:${encodeURIComponent(proxy.password)}@`
+        : '';
+      const proxyUrl = `${proxy.protocol}://${auth}${proxy.host}:${proxy.port}`;
+      const agent = proxy.protocol.startsWith('socks')
+        ? new SocksProxyAgent(proxyUrl)
+        : new HttpsProxyAgent(proxyUrl);
+
+      await axios.get('https://httpbin.org/ip', {
+        httpsAgent: agent,
+        proxy: false,
+        timeout: 10000
       });
-      
-      const page = await browser.newPage();
-      await page.authenticate({
-        username: proxy.username!,
-        password: proxy.password!
-      });
-      
-      // Пробуем загрузить простую страницу
-      await page.goto('https://httpbin.org/ip', { timeout: 10000 });
-      await browser.close();
-      
+
       return true;
     } catch (error) {
       this.logger.debug(`Проверка здоровья прокси ${proxy.host}:${proxy.port} не удалась: ${error}`);

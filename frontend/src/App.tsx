@@ -36,7 +36,7 @@ const App: React.FC = () => {
     };
 
     fetchStatus();
-    
+
     // Интервал обновления статуса
     const interval = setInterval(fetchStatus, 3000); // 3 секунды для более быстрого обновления
 
@@ -100,17 +100,17 @@ const App: React.FC = () => {
               </div>
               <span className="text-sm text-slate-400">Портфолио трекер</span>
             </div>
-            
+
             <div className="flex items-center space-x-3">
-                             <a
-                 href="https://t.me/privatekey7"
-                 target="_blank"
-                 rel="noopener noreferrer"
-                 className="flex items-center space-x-2 text-sm text-slate-300 hover:text-blue-400 transition-colors"
-               >
-                                   <img src="/icons/Telegram.png" alt="Telegram" className="w-5 h-5 rounded-full bg-transparent" />
-                 <span>PrivateKey</span>
-               </a>
+              <a
+                href="https://t.me/privatekey_ai"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center space-x-2 text-sm text-slate-300 hover:text-blue-400 transition-colors"
+              >
+                <img src="/icons/Telegram.png" alt="Telegram" className="w-5 h-5 rounded-full bg-transparent" />
+                <span>PrivateKey</span>
+              </a>
             </div>
           </div>
         </div>

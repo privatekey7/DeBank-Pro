@@ -18,7 +18,7 @@ export class Logo {
   private static getVisibleLength(str: string): number {
     // Убираем ANSI коды
     const cleanStr = str.replace(/\u001b\[[0-9;]*m/g, '');
-    
+
     // Подсчитываем длину с учетом эмодзи
     let length = 0;
     for (let i = 0; i < cleanStr.length; i++) {
@@ -36,7 +36,7 @@ export class Logo {
   // Красивая ANSI заставка
   static showLogo() {
     console.clear(); // Очищаем экран
-    
+
     const logo = `
 ${colors.cyan}╔══════════════════════════════════════════════════════════════════════════════╗${colors.reset}
 ${colors.cyan}║${colors.reset}                                                                              ${colors.cyan}║${colors.reset}
@@ -54,7 +54,7 @@ ${colors.cyan}║${colors.reset}                          ${colors.blue}${colors
 ${colors.cyan}║${colors.reset}                          ${colors.blue}${colors.bright}██║     ██║  ║██╗ ██████╔╝${colors.reset}                          ${colors.cyan}║${colors.reset}
 ${colors.cyan}║${colors.reset}                          ${colors.blue}${colors.bright}╚═╝     ╚═╝  ╚══╝${colors.reset}  ╚════╝                           ${colors.cyan}║${colors.reset}
 ${colors.cyan}║${colors.reset}                                                                              ${colors.cyan}║${colors.reset}
-${colors.cyan}║${colors.reset}                    ${colors.gray}💎 Автор: ${colors.reset}${colors.blue}https://t.me/privatekey7${colors.reset}${colors.gray}💎${colors.reset}                      ${colors.cyan}║${colors.reset}
+${colors.cyan}║${colors.reset}                    ${colors.gray}💎 Автор: ${colors.reset}${colors.blue}https://t.me/privatekey_ai${colors.reset}${colors.gray}💎${colors.reset}                      ${colors.cyan}║${colors.reset}
 ${colors.cyan}║${colors.reset}                                                                              ${colors.cyan}║${colors.reset}
 ${colors.cyan}╚══════════════════════════════════════════════════════════════════════════════╝${colors.reset}
 `;

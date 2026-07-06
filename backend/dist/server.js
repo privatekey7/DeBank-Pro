@@ -463,105 +463,52 @@ app.post('/api/wallets/add', async (req, res) => {
 const processWallets = async (addresses) => {
     logger.info(`Начинаем обработку ${addresses.length} кошельков`);
     const newWalletsData = [];
-    const failedAddresses = [];
     // Инициализируем прогресс
     processingProgress = { current: 0, total: addresses.length };
     isProcessing = true;
     // Создаем прогресс бар
     const progressBar = new progressBar_1.ProgressBar(addresses.length);
-    // Максимальное количество одновременных запросов
-    const maxConcurrent = 5;
-    const batchSize = addresses.length > 50 ? 20 : addresses.length > 20 ? 15 : 10; // Адаптивный размер батча
-    // Функция для обработки одного кошелька с повторными попытками
-    const processWalletWithRetry = async (address, retryCount = 0) => {
-        const maxRetries = 3;
-        try {
-            const walletData = await debankService.getWalletData(address);
-            if (walletData) {
-                logger.info(`Успешно получены данные для ${address}: $${walletData.totalValue.toFixed(2)}`);
-                return walletData;
-            }
-            else {
-                logger.warn(`Не удалось получить данные для ${address} (попытка ${retryCount + 1}/${maxRetries})`);
-                return null;
-            }
-        }
-        catch (error) {
-            logger.error(`Ошибка при обработке кошелька ${address} (попытка ${retryCount + 1}/${maxRetries})`, error);
-            if (retryCount < maxRetries - 1) {
-                // Ждем перед повторной попыткой (увеличиваем время с каждой попыткой)
-                const delay = (retryCount + 1) * 2000; // 2, 4, 6 секунд
-                logger.info(`Повторная попытка для ${address} через ${delay}мс...`);
-                await new Promise(resolve => setTimeout(resolve, delay));
-                return processWalletWithRetry(address, retryCount + 1);
-            }
-            else {
-                logger.error(`Исчерпаны все попытки для кошелька ${address}`);
-                return null;
-            }
-        }
-    };
-    for (let i = 0; i < addresses.length; i += batchSize) {
-        const batch = addresses.slice(i, i + batchSize);
-        logger.info(`Обработка батча ${Math.floor(i / batchSize) + 1}/${Math.ceil(addresses.length / batchSize)}: ${batch.length} кошельков`);
-        // Создаем промисы для параллельной обработки
-        const promises = batch.map(async (address, index) => {
-            const globalIndex = i + index;
-            logger.info(`Обработка кошелька ${globalIndex + 1}/${addresses.length}: ${address}`);
-            const walletData = await processWalletWithRetry(address);
-            return { address, walletData };
-        });
-        // Обрабатываем батч с ограничением параллелизма
-        const batchResults = await Promise.allSettled(promises);
-        // Собираем успешные результаты и неудачные адреса
-        let successCount = 0;
-        batchResults.forEach((result, index) => {
-            if (result.status === 'fulfilled' && result.value.walletData) {
-                newWalletsData.push(result.value.walletData);
-                successCount++;
-            }
-            else if (result.status === 'fulfilled' && !result.value.walletData) {
-                failedAddresses.push(result.value.address);
-            }
-        });
-        // Обновляем прогресс
-        processingProgress.current = i + batch.length;
-        progressBar.update(i + batch.length);
-        logger.info(`Батч ${Math.floor(i / batchSize) + 1} завершен: ${successCount}/${batch.length} успешно`);
-        // Небольшая пауза между батчами для снижения нагрузки
-        if (i + batchSize < addresses.length) {
-            logger.info(`Пауза между батчами...`);
-            await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-    }
-    // Обрабатываем неудачные кошельки еще раз с увеличенными задержками
-    if (failedAddresses.length > 0) {
-        logger.info(`Повторная обработка ${failedAddresses.length} неудачных кошельков...`);
-        // Создаем отдельный прогресс бар для повторной обработки
-        const retryProgressBar = new progressBar_1.ProgressBar(failedAddresses.length);
-        for (let i = 0; i < failedAddresses.length; i++) {
-            const address = failedAddresses[i];
-            logger.info(`Финальная попытка для ${address}...`);
+    // Пул воркеров: все кошельки в общей очереди, освободившийся воркер сразу
+    // берёт следующий — без батчей и head-of-line blocking (как ThreadPoolExecutor
+    // в DeBankChecker). Ретраи с ротацией прокси уже внутри getWalletData, поэтому
+    // здесь никаких задержек между попытками.
+    const proxyCount = debankService.getProxyStatus().total;
+    const MAX_WORKERS = 500;
+    const PROXY_MULTIPLIER = 5;
+    const concurrency = Math.max(1, Math.min(MAX_WORKERS, addresses.length, proxyCount > 0 ? proxyCount * PROXY_MULTIPLIER : addresses.length));
+    logger.info(`Параллельных воркеров: ${concurrency} (прокси: ${proxyCount})`);
+    let nextIndex = 0;
+    let completed = 0;
+    const worker = async () => {
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+            const index = nextIndex++;
+            if (index >= addresses.length)
+                return;
+            const address = addresses[index];
             try {
-                // Увеличиваем задержку перед финальной попыткой
-                await new Promise(resolve => setTimeout(resolve, 5000));
                 const walletData = await debankService.getWalletData(address);
                 if (walletData) {
                     newWalletsData.push(walletData);
-                    logger.info(`Успешно получены данные для ${address} в финальной попытке`);
+                    logger.info(`Успешно получены данные для ${address}: $${walletData.totalValue.toFixed(2)}`);
                 }
                 else {
-                    logger.error(`Не удалось получить данные для ${address} даже в финальной попытке`);
+                    logger.warn(`Не удалось получить данные для ${address}`);
                 }
             }
             catch (error) {
-                logger.error(`Ошибка при финальной попытке для ${address}`, error);
+                logger.error(`Ошибка при обработке кошелька ${address}`, error);
             }
-            // Обновляем прогресс повторной обработки
-            retryProgressBar.update(i + 1);
+            finally {
+                completed++;
+                if (processingProgress) {
+                    processingProgress.current = completed;
+                }
+                progressBar.update(completed);
+            }
         }
-        retryProgressBar.complete();
-    }
+    };
+    await Promise.all(Array.from({ length: concurrency }, () => worker()));
     // Обновляем данные и сохраняем в файл
     walletsData = newWalletsData;
     saveWalletsData(newWalletsData);
