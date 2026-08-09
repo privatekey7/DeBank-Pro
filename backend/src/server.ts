@@ -4,7 +4,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import fs from 'fs';
 import path from 'path';
-import { DeBankService } from './services/debankService';
+import { createBalanceService } from './services/balanceService';
+import { BALANCE_SOURCE } from './config';
 import { DataProcessor } from './services/dataProcessor';
 import { WalletData } from './types';
 import { LoggerService } from './services/loggerService';
@@ -23,7 +24,9 @@ app.use(cors({
 app.use(express.json());
 
 // Services
-const debankService = new DeBankService();
+// Источник баланса выбирается флагом BALANCE_SOURCE (rabby|debank). Имя
+// переменной оставлено прежним, чтобы не трогать остальной код сервера.
+const debankService = createBalanceService();
 const dataProcessor = new DataProcessor();
 const logger = LoggerService.getInstance();
 
@@ -599,6 +602,7 @@ app.listen(PORT, async () => {
   
   logger.info(`Backend сервер запущен на порту ${PORT}`);
   logger.info(`API доступен по адресу: http://localhost:${PORT}/api`);
+  logger.info(`Источник баланса: ${BALANCE_SOURCE.toUpperCase()}`);
   
   // Очищаем старые данные при запуске
   logger.info('Очистка старых данных при запуске...');

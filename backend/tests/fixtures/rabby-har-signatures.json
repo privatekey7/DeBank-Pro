@@ -1,0 +1,34 @@
+{
+  "_comment": "Реальные подписи из HAR веб-версии Rabby (0.94.1), адрес 0x9f5d...bce9. Используются для проверки воспроизведения подписи байт-в-байт.",
+  "prefix": "rabby-api",
+  "cases": [
+    {
+      "path": "/v1/user/total_balance",
+      "params": { "id": "0x9f5dc2f69006fffae20247a95f1dfa0cb057bce9", "is_core": "true" },
+      "nonce": "n_0ryzNnvSRFkqUUbQRpMB8B02QBeVcbPoetlbgb3i",
+      "ts": 1786263519,
+      "expected": "43052aa374a600b60115d582eb7f050a5503e565f8751b93957aae5909df6cb3"
+    },
+    {
+      "path": "/v1/user/used_chain_list",
+      "params": { "id": "0x9f5dc2f69006fffae20247a95f1dfa0cb057bce9" },
+      "nonce": "n_EVweBnesOpliKLFvILfZMDKThTQ7rTtSN5xdvgul",
+      "ts": 1786263518,
+      "expected": "d3738f0e51cab2aa96a5a79c57f799b53bb129645f975d2bf30646a9c690e596"
+    },
+    {
+      "path": "/v1/user/complex_app_list",
+      "params": { "id": "0x9f5dc2f69006fffae20247a95f1dfa0cb057bce9" },
+      "nonce": "n_zo801t45Hd2u6TRBVTCG3er0BPEdA3d7nVRT60v0",
+      "ts": 1786263518,
+      "expected": "b21c4e4457cc8bf8137c312cd19e69f70216ccdde781fb0057ba4d2ef341697d"
+    },
+    {
+      "path": "/v1/user/collection_list",
+      "params": { "id": "0x9f5dc2f69006fffae20247a95f1dfa0cb057bce9", "is_all": "true" },
+      "nonce": "n_BiUqeFXTTrNJa6IU55Wdy7C5NGb0cIHxeVinCAgC",
+      "ts": 1786263527,
+      "expected": "ce90130dbfe44dea6e317ee7588133397076e32207e30e9e0283aea112459edb"
+    }
+  ]
+}

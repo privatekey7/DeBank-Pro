@@ -9,7 +9,8 @@ const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
-const debankService_1 = require("./services/debankService");
+const balanceService_1 = require("./services/balanceService");
+const config_1 = require("./config");
 const dataProcessor_1 = require("./services/dataProcessor");
 const loggerService_1 = require("./services/loggerService");
 const progressBar_1 = require("./utils/progressBar");
@@ -24,7 +25,9 @@ app.use((0, cors_1.default)({
 }));
 app.use(express_1.default.json());
 // Services
-const debankService = new debankService_1.DeBankService();
+// Источник баланса выбирается флагом BALANCE_SOURCE (rabby|debank). Имя
+// переменной оставлено прежним, чтобы не трогать остальной код сервера.
+const debankService = (0, balanceService_1.createBalanceService)();
 const dataProcessor = new dataProcessor_1.DataProcessor();
 const logger = loggerService_1.LoggerService.getInstance();
 // Пути для файлов данных
@@ -528,6 +531,7 @@ app.listen(PORT, async () => {
     logo_1.Logo.showStartupStatus(Number(PORT));
     logger.info(`Backend сервер запущен на порту ${PORT}`);
     logger.info(`API доступен по адресу: http://localhost:${PORT}/api`);
+    logger.info(`Источник баланса: ${config_1.BALANCE_SOURCE.toUpperCase()}`);
     // Очищаем старые данные при запуске
     logger.info('Очистка старых данных при запуске...');
     cleanupOldData();
