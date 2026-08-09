@@ -34,6 +34,25 @@ npm install
 npm start
 ```
 
+## 🔀 Источник баланса (Rabby / DeBank)
+
+Балансы по умолчанию берутся из **Rabby API** (`api.rabby.io`): итог кошелька
+приходит готовым агрегатом в одном запросе `total_balance`, поэтому ручного
+суммирования нет — это устраняет «фантомные» балансы (когда под нагрузкой
+DeBank отдавал портфель чужого адреса и итог раздувался).
+
+Переключить источник можно переменной окружения (без пересборки):
+
+```bash
+BALANCE_SOURCE=rabby   npm start   # по умолчанию — авторитетный агрегат
+BALANCE_SOURCE=debank  npm start   # легаси-fallback (kill switch)
+```
+
+Тесты бэкенда:
+```bash
+cd backend && npm test
+```
+
 ## <img src="https://cdn-icons-png.flaticon.com/128/16497/16497192.png" alt="StableFix Logo" width="30" height="30" style="vertical-align: baseline; margin-right: 4px;"> Системные требования
 
 - **[Node.js](https://nodejs.org/en/download)** версии 21 или выше

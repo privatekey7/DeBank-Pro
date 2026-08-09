@@ -29,6 +29,12 @@
     "vite": "^7.3.1"
   },
   "overrides": {
+    "unzipper": "^0.12.5",
+    "@fast-csv/format": "^5.0.7",
+    "archiver-utils": {
+      ".": "^5.0.2",
+      "glob": "^13.0.6"
+    },
     "uuid": "^11.1.1"
   }
 }
