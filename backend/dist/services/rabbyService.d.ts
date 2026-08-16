@@ -1,18 +1,24 @@
 import { WalletData, ProxyConfig } from '../types';
 import { CorroborationConfig } from '../config';
 import { BaseBalanceService } from './baseBalanceService';
+/** Сброс магазина ключа к init-значению (для тестов). */
+export declare const resetKeyState: () => void;
 /**
  * Лёгкий клиент Rabby API: подписанные HMAC-SHA256 запросы через прокси.
  *
- * Отличия от DeBank-клиента (проверено HAR + Season12):
- *  - base URL `api.rabby.io`, префикс подписи `rabby-api`;
- *  - идентификация через `x-client: Rabby` + `x-version` (без `account`/`source`/Referer);
- *  - параметр адреса — `id` (lowercase);
- *  - начальный `x-api-key` — Rabby-ключ, ротируется через `x-set-api-key`.
+ * Заголовки идентификации должны ТОЧНО повторять клиент Rabby (сверено с HAR
+ * браузерного расширения; см. docs/incident-429-antibot.md в DeBankChecker):
+ *   - подписные заголовки — в нижнем регистре (x-api-key, x-api-time, ...);
+ *   - x-api-time — время ВЫДАЧИ текущего API-ключа, а не время запроса;
+ *   - x-version — 0.94.2 (версия из HAR расширения);
+ *   - браузерные заголовки (accept-language, dnt, priority, sec-fetch-*)
+ *     досылаются поверх User-Agent.
+ * Анти-бот API на любое отклонение отвечает фейковым 429 с пустым телом —
+ * именно так душился /v1/user/token_list при верной подписи.
  */
 export declare class RabbyApiClient {
     private apiKey;
-    private initTs;
+    private keyTime;
     private http;
     constructor(proxy: ProxyConfig | null, timeout: number);
     private buildHeaders;
@@ -26,7 +32,14 @@ export declare class RabbyApiClient {
         total_usd_value: number;
         chain_list: any[];
     }>;
-    /** Токены одной сети. `is_all=false` = только проверенные (core). */
+    /**
+     * Токены кошелька по ВСЕМ сетям одним запросом (серверный кэш).
+     * Заменяет десятки запросов token_list (по одному на сеть) — расширение
+     * Rabby само использует этот эндпоинт для быстрой загрузки. Ответ — тот же
+     * формат токенов, фильтрация на стороне чекера.
+     */
+    getCacheTokenList: (address: string) => Promise<any[]>;
+    /** Токены одной сети (фолбэк при сбое cache_token_list). `is_all=false` = только core. */
     getTokenList: (address: string, chainId: string) => Promise<any[]>;
     /** DeFi-протоколы с позициями. Возвращает `{ apps, error_apps }`. */
     getComplexAppList: (address: string) => Promise<any[]>;
@@ -41,6 +54,7 @@ export declare class RabbyService extends BaseBalanceService {
     private requestTimeout;
     constructor(corroboration: CorroborationConfig);
     protected fetchWalletData: (walletAddress: string, proxy: ProxyConfig | null) => Promise<WalletData>;
+    private fetchTokens;
     /**
      * Приводим Rabby-приложения к форме DeBank-протокола, ожидаемой билдером.
      * У Rabby нет сети на уровне протокола — берём её из первого токена позиции,

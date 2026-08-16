@@ -1,9 +1,8 @@
 import { WalletData } from '../types';
-import { BalanceSource } from '../config';
-import { DeBankService } from './debankService';
+import { RabbyService } from './rabbyService';
 /**
- * Публичный контракт источника баланса — общий для DeBank и Rabby. Сервер
- * работает через этот интерфейс и не знает, какой источник активен.
+ * Публичный контракт источника баланса. Сервер работает через этот интерфейс
+ * и не знает деталей реализации.
  */
 export interface BalanceService {
     getWalletData(walletAddress: string): Promise<WalletData | null>;
@@ -11,7 +10,7 @@ export interface BalanceService {
         total: number;
         working: number;
     };
-    getProxyStats(): ReturnType<DeBankService['getProxyStats']>;
+    getProxyStats(): ReturnType<RabbyService['getProxyStats']>;
     clearCache(): void;
     getCacheStats(): {
         totalEntries: number;
@@ -20,9 +19,9 @@ export interface BalanceService {
     };
 }
 /**
- * Фабрика источника баланса по флагу `BALANCE_SOURCE`.
- * `rabby` (по умолчанию) — авторитетный агрегат, фантом-баг устранён.
- * `debank` — легаси-fallback (kill switch).
+ * Источник баланса — Rabby API (авторитетный агрегат, фантом-баг устранён).
+ * Ветка DeBank удалена (как в github.com/privatekey7/DeBankChecker, PR #5):
+ * итог и раньше брался только из total_usd_value.
  */
-export declare const createBalanceService: (source?: BalanceSource) => BalanceService;
+export declare const createBalanceService: () => BalanceService;
 //# sourceMappingURL=balanceService.d.ts.map

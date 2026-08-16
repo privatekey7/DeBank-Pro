@@ -10,7 +10,6 @@ const helmet_1 = __importDefault(require("helmet"));
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const balanceService_1 = require("./services/balanceService");
-const config_1 = require("./config");
 const dataProcessor_1 = require("./services/dataProcessor");
 const loggerService_1 = require("./services/loggerService");
 const progressBar_1 = require("./utils/progressBar");
@@ -25,9 +24,8 @@ app.use((0, cors_1.default)({
 }));
 app.use(express_1.default.json());
 // Services
-// Источник баланса выбирается флагом BALANCE_SOURCE (rabby|debank). Имя
-// переменной оставлено прежним, чтобы не трогать остальной код сервера.
-const debankService = (0, balanceService_1.createBalanceService)();
+// Источник баланса — Rabby API (ветка DeBank удалена, см. services/rabbyService.ts).
+const balanceService = (0, balanceService_1.createBalanceService)();
 const dataProcessor = new dataProcessor_1.DataProcessor();
 const logger = loggerService_1.LoggerService.getInstance();
 // Пути для файлов данных
@@ -132,10 +130,10 @@ let processingProgress = null;
 // API Routes
 // Получить статус сервера
 app.get('/api/status', (req, res) => {
-    const proxyStatus = debankService.getProxyStatus();
-    const proxyStats = debankService.getProxyStats();
+    const proxyStatus = balanceService.getProxyStatus();
+    const proxyStats = balanceService.getProxyStats();
     const loggerStats = logger.getStats();
-    const cacheStats = debankService.getCacheStats();
+    const cacheStats = balanceService.getCacheStats();
     // Получаем общее количество кошельков из файла
     const totalWallets = loadWalletsFromFile().length;
     // Проверяем наличие файлов данных
@@ -384,7 +382,7 @@ app.delete('/api/logs', (req, res) => {
 // Очистить кэш
 app.delete('/api/cache', (req, res) => {
     try {
-        debankService.clearCache();
+        balanceService.clearCache();
         res.json({ message: 'Кэш очищен' });
     }
     catch (error) {
@@ -406,7 +404,7 @@ app.delete('/api/data', (req, res) => {
             logger.info('Файл состояния обработки удален');
         }
         // Очищаем кэш
-        debankService.clearCache();
+        balanceService.clearCache();
         res.json({ message: 'Все данные и файлы очищены' });
     }
     catch (error) {
@@ -475,7 +473,7 @@ const processWallets = async (addresses) => {
     // берёт следующий — без батчей и head-of-line blocking (как ThreadPoolExecutor
     // в DeBankChecker). Ретраи с ротацией прокси уже внутри getWalletData, поэтому
     // здесь никаких задержек между попытками.
-    const proxyCount = debankService.getProxyStatus().total;
+    const proxyCount = balanceService.getProxyStatus().total;
     const MAX_WORKERS = 500;
     const PROXY_MULTIPLIER = 5;
     const concurrency = Math.max(1, Math.min(MAX_WORKERS, addresses.length, proxyCount > 0 ? proxyCount * PROXY_MULTIPLIER : addresses.length));
@@ -490,7 +488,7 @@ const processWallets = async (addresses) => {
                 return;
             const address = addresses[index];
             try {
-                const walletData = await debankService.getWalletData(address);
+                const walletData = await balanceService.getWalletData(address);
                 if (walletData) {
                     newWalletsData.push(walletData);
                     logger.info(`Успешно получены данные для ${address}: $${walletData.totalValue.toFixed(2)}`);
@@ -531,7 +529,7 @@ app.listen(PORT, async () => {
     logo_1.Logo.showStartupStatus(Number(PORT));
     logger.info(`Backend сервер запущен на порту ${PORT}`);
     logger.info(`API доступен по адресу: http://localhost:${PORT}/api`);
-    logger.info(`Источник баланса: ${config_1.BALANCE_SOURCE.toUpperCase()}`);
+    logger.info(`Источник баланса: RABBY`);
     // Очищаем старые данные при запуске
     logger.info('Очистка старых данных при запуске...');
     cleanupOldData();
