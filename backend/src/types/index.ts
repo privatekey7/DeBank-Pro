@@ -46,13 +46,6 @@ export type ProxyConfig = {
   password?: string;
 };
 
-export type DeBankApiResponse = {
-  user?: any;
-  token_balance_list?: any[];
-  portfolio_list?: any[] | undefined;
-  total_net_curve?: any;
-};
-
 export type AggregatedData = {
   totalValue: number;
   totalChange24h: number;
