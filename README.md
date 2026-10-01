@@ -62,6 +62,6 @@ cd backend && npm test
 ## <img src="https://cdn-icons-png.flaticon.com/128/2111/2111646.png" alt="StableFix Logo" width="24" height="24" style="vertical-align: baseline; margin-right: 4px;"> Контакты
 Если у вас есть вопросы или предложения, свяжитесь со мной через:
 
-Telegram: [@PrivateKey](https://t.me/Andrey_PrivateKey)
+Telegram: [@andrey_privatekey7](https://t.me/andrey_privatekey7)
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/privatekey7/DeBank-Pro)
