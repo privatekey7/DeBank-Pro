@@ -60,8 +60,7 @@ cd backend && npm test
 - Современный браузер (Chrome, Firefox, Safari, Edge)
 
 ## <img src="https://cdn-icons-png.flaticon.com/128/2111/2111646.png" alt="StableFix Logo" width="24" height="24" style="vertical-align: baseline; margin-right: 4px;"> Контакты
-Если у вас есть вопросы или предложения, свяжитесь со мной через:
-
-Telegram: [@andrey_privatekey7](https://t.me/andrey_privatekey7)
+Вопросы и предложения — в [чате канала](https://t.me/privatekey_ai_chat).
+Новости и другие проекты — в Telegram-канале [@privatekey_ai](https://t.me/privatekey_ai).
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/privatekey7/DeBank-Pro)
